@@ -199,6 +199,14 @@ function OnPlayerSpawned(player_entity)
         ComponentSetValue2(controls_component, "enabled", false)
     end
 
+    --add damage monitor luacomponent to detect cause of "deaths"
+    EntityAddComponent(player_entity, "LuaComponent",
+    {
+        _tags="NT_damage_monitor",
+        script_damage_received = "mods/noita-together/files/scripts/damage_monitor.lua",
+        execute_every_n_frame = "-1",
+    })
+
     --Prevent players from polymorphing before the run begins
     --But don't add if we already have poly immunity from some other source (resumed run / reconnect while poly immune?)
     if (not EntityHasTag(player_entity, "polymorphable_NOT")) then

@@ -26,4 +26,7 @@ if (NT.initialized ~= true) then
     NT.wsQueue = "[]"
     NT.queuedItems = "[]"
     NT.gold_queue = 0
+
+    NT.last_killed_by = nil
+    NT.last_killed_by_entity = nil;
 end

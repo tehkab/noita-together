@@ -516,6 +516,8 @@ function PlayerRespawn(entity_id, poly, weak)
             is_perk = false
         })
         EntitySetTransform(player, GetLastCheckPoint())
+        --re-enable damage monitor once respawned
+        EntitySetComponentsWithTagEnabled(entity_id, "NT_damage_monitor", true)
         Respawning = false
     end)
 end
