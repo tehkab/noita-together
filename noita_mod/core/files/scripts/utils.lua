@@ -536,6 +536,36 @@ function IsPlayerPolymorphed()
     end
 end
 
+--Return true if the player is permanently polymorphed
+function isPlayerPermanentlyPolymorphed()
+	local _, polyPlayer = IsPlayerPolymorphed()
+
+	--not polyed or cant find poly-player
+	if not polyPlayer then
+		return false
+	end
+
+	--iterate over child entities to find the one with the game effect component
+	local children = EntityGetAllChildren(polyPlayer)
+	for _,ent in pairs(children) do
+		local comps = EntityGetComponent(ent, "GameEffectComponent") or {}
+		for _,cmp in pairs(comps) do
+			--make sure its chaotic poly ("POLYMORPH_RANDOM")
+			local effect = ComponentGetValue2(cmp, "effect")
+			if effect and effect == "POLYMORPH_RANDOM" then
+				--permanent if frames is -1 (also blank serialized data, that's probably a redundant / expensive check?)
+				local frames = ComponentGetValue2(cmp, "frames")
+				if frames and frames == -1 then
+					return true
+				end
+			end
+		end
+	end
+	
+	--not permanently polyed
+    return false
+end
+
 function IsPlayerDead()
     local player = GetPlayer()
     local damage_models = nil
