@@ -264,6 +264,7 @@ wsEvents = {
     end,
     UpdateFlags = function(data)
         dofile("mods/noita-together/files/scripts/remove_flags.lua")
+        local is_host = false
         for _, entry in ipairs(data) do
             if (entry.flag == "NT_sync_world_seed") then
                 ModSettingSet( "noita_together.seed", entry.uIntVal )
@@ -275,7 +276,13 @@ wsEvents = {
                 end
             else
                 GameAddFlagRun(entry.flag)
+
+                --store this flag specially
+                if entry.flag == "NT_is_host" then
+                    is_host = true
+                end
             end
         end
+        NT.is_host = is_host
     end
 }

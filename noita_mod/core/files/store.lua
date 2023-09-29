@@ -6,6 +6,7 @@ dofile("mods/noita-together/files/stringstore/noitaglobalstore.lua")
 NT = stringstore.open_store(stringstore.noita.global("NT_STORE"))
 
 if (NT.initialized ~= true) then
+    NT.is_host = false
     NT.run_started = false
     NT.player_count = 1
     NT.players = {}
