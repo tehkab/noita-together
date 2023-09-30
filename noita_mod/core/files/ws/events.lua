@@ -1,6 +1,7 @@
 dofile( "data/scripts/perks/perk.lua" )
 dofile( "mods/noita-together/files/scripts/hourglass_events.lua")
 dofile( "mods/noita-together/files/scripts/util/player_ghosts.lua")
+dofile( "mods/noita-together/files/scripts/util/death_penalty.lua")
 
 customEvents = {
     PlayerPOI = function(data)
@@ -96,6 +97,14 @@ wsEvents = {
     end,
     RespawnPenalty = function (data)
         if (GameHasFlagRun("NT_death_penalty_weak_respawn")) then
+            if NT.is_host and HostCheckDeathPenalty() then
+                --send playerDeath attributed to that player
+                SendWsEvent({event="PlayerDeath", payload={isWin=false, gameTime=GameGetFrameNum(), blameUserId=data.userId}})
+                --end the run for us, too
+                NT.end_msg = GameTextGet("$noitatogether_player_died", PlayerList[data.blameUserId or data.userId].name)
+                FinishRun()
+                return
+            end
             RespawnPenalty(data.userId)
         end
     end,
@@ -235,7 +244,8 @@ wsEvents = {
             PlayerList[data.userId].curHp = 0
             --msg = PlayerList[data.userId].name .. " has died." --changed the text of this, so just commenting out for now..
             if (GameHasFlagRun("NT_death_penalty_end") or GameHasFlagRun("NT_death_penalty_weak_respawn")) then
-                NT.end_msg = GameTextGet("$noitatogether_player_died", PlayerList[data.userId].name)
+                --use blameUserId if set, otherwise it was the sender that died
+                NT.end_msg = GameTextGet("$noitatogether_player_died", PlayerList[data.blameUserId or data.userId].name)
                 FinishRun()
             end
         end

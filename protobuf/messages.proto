@@ -341,6 +341,7 @@ message ServerNemesisAbility {
 message ClientPlayerDeath {
     bool is_win = 1;
     optional uint32 game_time = 2;
+    optional string blame_user_id = 3;
 }
 
 message ServerPlayerDeath {

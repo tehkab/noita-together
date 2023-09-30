@@ -305,6 +305,11 @@ function GetLastCheckPoint()
     return x, y --justin case? 
 end
 
+--Returns the max HP multiplier when a death penalty is applied. May be modified by something in the future
+function GetDeathPenaltyMaxHPMultiplier()
+    return 0.8
+end
+
 function EndRun()
     if (NT.run_ended) then return end
     NT.run_ended = true
@@ -312,6 +317,7 @@ function EndRun()
     SendWsEvent({event="PlayerDeath", payload={isWin=win, gameTime=GameGetFrameNum()}})
 end
 
+--Called when run is over due do player death ("end run" penalty) or max hp dropped too low?
 function FinishRun()
     if (NT.run_ended or not NT.run_started) then return end
     NT.run_ended = true
@@ -329,13 +335,37 @@ function FinishRun()
     SendWsEvent({event="RunOver", payload={}})
 end
 
+--get player damage model
+function GetPlayerDamageModel()
+    local player = GetPlayer()
+    return (player and EntityGetFirstComponent(player, "DamageModelComponent")) or nil
+end
+
+--apply respawn penalty
+function ApplyRespawnPenalty(damage_model)
+    if (damage_model ~= nil) then
+        local max_hp = ComponentGetValue2(damage_model, "max_hp")
+        local cur_hp = ComponentGetValue2(damage_model, "hp")
+        local new_max = max_hp * GetDeathPenaltyMaxHPMultiplier() --0.8
+
+        ComponentSetValue2(damage_model, "max_hp", new_max)
+        if (cur_hp > new_max) then
+            ComponentSetValue2(damage_model, "hp", new_max)
+        end
+    end
+end
+
+--Called when a DIFFERENT player dies and triggers the shared death penalty
 function RespawnPenalty(userId)
     local player_name = PlayerList[userId].name
     if (GameHasFlagRun("NT_death_penalty_full_respawn")) then
         GamePrintImportant(GameTextGet("$noitatogether_player_died", player_name))
         return
     end
-    local player = GetPlayer()
+
+    ApplyRespawnPenalty(GetPlayerDamageModel())
+
+    --[[local player = GetPlayer()
     local damage_models = nil
     if (player ~= nil) then
         damage_models = EntityGetFirstComponent(player, "DamageModelComponent")
@@ -344,7 +374,7 @@ function RespawnPenalty(userId)
         local max_hp = ComponentGetValue2(damage_models, "max_hp")
         local cur_hp = ComponentGetValue2(damage_models, "hp")
 
-        local new_max = max_hp * 0.8
+        local new_max = max_hp * GetDeathPenaltyMaxHPMultiplier() --0.8
         if (new_max < 1) then
             GamePrintImportant("$noitatogether_run_end_lowhp_title", "$noitatogether_run_end_lowhp_subtitle")
             EndRun()
@@ -355,13 +385,14 @@ function RespawnPenalty(userId)
         if (cur_hp > new_max) then
             ComponentSetValue2(damage_models, "hp", new_max)
         end
-    end
+    end]]--
     GamePrintImportant(GameTextGet("$noitatogether_player_died_penalty_title", player_name), "$noitatogether_player_died_penalty_subtitle")
 end
 
 function PlayerRespawn(entity_id, poly, weak)
     if (Respawning == true) then return end
     async(function()
+        --create the respawning/death message entity and lock camera here
         local cx, cy = GameGetCameraPos()
         GameSetCameraFree(true)
         
@@ -371,6 +402,8 @@ function PlayerRespawn(entity_id, poly, weak)
             LastRespawn = GameGetFrameNum()
             SendWsEvent({event="RespawnPenalty", payload={deaths=0}})--for now
         end
+
+        --unpoly us
         if (poly) then
             local children = EntityGetAllChildren(entity_id)
             for _, child in ipairs(children) do
@@ -385,7 +418,7 @@ function PlayerRespawn(entity_id, poly, weak)
             end
             wait(2)
         end
-        local player = GetPlayer()
+        --[[local player = GetPlayer()
         local damage_models = nil
         if (player ~= nil) then
             damage_models = EntityGetFirstComponent(player, "DamageModelComponent")
@@ -393,7 +426,7 @@ function PlayerRespawn(entity_id, poly, weak)
         if (damage_models ~= nil) then
             local max_hp = ComponentGetValue2(damage_models, "max_hp")
             if (weak) then
-                max_hp = max_hp * 0.8
+                max_hp = max_hp * GetDeathPenaltyMaxHPMultiplier() --0.8
                 if (max_hp < 1) then
                     --Send death
                     EndRun()
@@ -410,7 +443,36 @@ function PlayerRespawn(entity_id, poly, weak)
                 end
             end
             ComponentSetValue2(damage_models, "hp", max_hp)
+        end]]--
+
+        --Send that we died
+        if (GameGetFrameNum() > LastRespawn + 30) then --not sure why this check exists?
+            LastRespawn = GameGetFrameNum()
+            SendWsEvent({event="RespawnPenalty", payload={deaths=0}}) -- for now(?)
         end
+
+        --damagemodel used for respawn penalty AND heal-to-full
+        local player = GetPlayer()
+        local damage_model = player and EntityGetFirstComponent(player, "DamageModelComponent")
+
+        --Apply respawn penalty (if in that mode)
+        if weak then
+            --If host, do respawn penalty check now
+            if NT.is_host and HostCheckDeathPenalty() then
+                GamePrint("(NT) Died as host, hp is low and and should end run!")
+                return
+            end
+
+            ApplyRespawnPenalty(damage_model)
+        end
+
+        --Heal to full
+        ComponentSetValue2(damage_model, "hp", ComponentGetValue2(damage_model, "max_hp"))
+
+        --TODO remove some debuffs (fire, etc) ???
+
+        --Add respawn protection effect
+
         local effect_entity = LoadGameEffectEntityTo(player, "data/entities/misc/effect_protection_all.xml")
         local effect_comp = EntityGetFirstComponent(effect_entity, "GameEffectComponent")
         ComponentSetValue2(effect_comp, "frames", 60*40)
@@ -422,6 +484,8 @@ function PlayerRespawn(entity_id, poly, weak)
             display_in_hud = true,
             is_perk = false
         })
+        
+        --Place at checkpoint
         EntitySetTransform(player, GetLastCheckPoint())
         Respawning = false
     end)
