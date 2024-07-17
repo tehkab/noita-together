@@ -81,30 +81,17 @@ function DespawnPlayerGhost(userId)
 end
 
 function TeleportPlayerGhost(data)
-    local ghosts = EntityGetWithTag("nt_ghost")
-
-    for _, ghost in pairs(ghosts) do
-        local id_comp = get_variable_storage_component(ghost, "userId")
-        local userId = ComponentGetValue2(id_comp, "value_string")
-        if (userId == data.userId) then
-            EntitySetTransform(ghost, data.x, data.y)
-            break
-        end
+    local ghost = GetPlayerGhost(data.userId)
+    if ghost then
+        EntitySetTransform(ghost, data.x, data.y)
     end
 end
 
 function MovePlayerGhost(data)
-    local ghosts = EntityGetWithTag("nt_ghost")
-
-    for _, ghost in pairs(ghosts) do
-        local id_comp = get_variable_storage_component(ghost, "userId")
-        local userId = ComponentGetValue2(id_comp, "value_string")
-        if (userId == data.userId) then
-            local dest = get_variable_storage_component(ghost, "dest")
-            
-            ComponentSetValue2(dest, "value_string", data.jank)
-            break
-        end
+    local ghost = GetPlayerGhost(data.userId)
+    if ghost then
+        local dest = get_variable_storage_component(ghost, "dest")
+        ComponentSetValue2(dest, "value_string", data.jank)
     end
 end
 
