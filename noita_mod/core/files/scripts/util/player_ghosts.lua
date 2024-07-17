@@ -41,6 +41,8 @@ function SpawnPlayerGhost(player, userId)
     player.ghostEntityId = ghost
     --apply cosmetics (if known)
     SetPlayerGhostCosmetics(userId, ghost)
+    --restore emotes skin
+    SkinSwapPlayerGhost(userId, nil) --use cached
     --refresh inventory
     SetPlayerGhostInventory(userId, ghost)
     --toggle ghost based on settings
@@ -227,41 +229,47 @@ function SetPlayerGhostCosmetics(userId, ghost)
 end
 
 function EmotePlayerGhost(data)
-    local ghosts = EntityGetWithTag("nt_ghost")
-    for _, ghost in pairs(ghosts) do
-        local id_comp = get_variable_storage_component(ghost, "userId")
-        local userId = ComponentGetValue2(id_comp, "value_string")
-        if (userId == data.userId) then
+    if ModSettingGet("noita-together.NT_SHOW_EMOTES") then
+        local ghost = GetPlayerGhost(data.userId)
+
+        if ghost then
             local children = EntityGetAllChildren(ghost)
-            for _, child in ipairs(children) do
-                if EntityGetName(child) == "emotes_on_ghost" then
-                    local current_emote_var_comp = EntityGetComponentIncludingDisabled(child, "VariableStorageComponent")[1]
-                    ComponentSetValue2(current_emote_var_comp, "value_string", data.emote)
-                    local frames_emoting_var_comp = EntityGetComponentIncludingDisabled(child, "VariableStorageComponent")[4]
-                    ComponentSetValue2(frames_emoting_var_comp, "value_int", 0)
+            if children then
+                for _, child in ipairs(children) do
+                    if EntityGetName(child) == "emotes_on_ghost" then
+                        local vscs = EntityGetComponentIncludingDisabled(child, "VariableStorageComponent")
+                        if vscs then
+--                          local current_emote_var_comp = EntityGetComponentIncludingDisabled(child, "VariableStorageComponent")[1]
+--                          local frames_emoting_var_comp = EntityGetComponentIncludingDisabled(child, "VariableStorageComponent")[4]
+                            ComponentSetValue2(vscs[1], "value_string", data.emote) --current_emote_var_comp
+                            ComponentSetValue2(vscs[4], "value_int", 0) --frames_emoting_var_comp
+                        end
+                    end
                 end
             end
-            break
         end
     end
 end
 
-function SkinSwapPlayerGhost(data)
-    local ghosts = EntityGetWithTag("nt_ghost")
-    for _, ghost in pairs(ghosts) do
-        local id_comp = get_variable_storage_component(ghost, "userId")
-        local userId = ComponentGetValue2(id_comp, "value_string")
-        if (userId == data.userId) then
+function SkinSwapPlayerGhost(userId, skin)
+    if ModSettingGet("noita-together.NT_SHOW_EMOTES") then
+        --use cached value if 'skin' not provided; default to "purple" if that isnt set
+        if not skin then
+            skin = PlayerList[userId].noitaEmotes.skin or "purple"
+        end
+        local ghost = GetPlayerGhost(userId)
+        if ghost then
             local children = EntityGetAllChildren(ghost)
-            for _, child in ipairs(children) do
-                if EntityGetName(child) == "emotes_on_ghost" then
-                    local skin_var_comp = EntityGetComponentIncludingDisabled(child, "VariableStorageComponent")[8]
-                    print(tostring(data.skin))
-                    print(tostring(skin_var_comp))
-                    ComponentSetValue2(skin_var_comp, "value_string", data.skin)
+            if children then
+                for _, child in ipairs(children) do
+                    if EntityGetName(child) == "emotes_on_ghost" then
+                        local skin_var_comp = EntityGetComponentIncludingDisabled(child, "VariableStorageComponent")[8]
+                        --nt print_error("skin " .. tostring(data.skin))
+                        --nt print_error("skin " .. tostring(skin_var_comp))
+                        ComponentSetValue2(skin_var_comp, "value_string", skin)
+                    end
                 end
             end
-            break
         end
     end
 end

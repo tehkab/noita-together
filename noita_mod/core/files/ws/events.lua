@@ -55,8 +55,10 @@ customEvents = {
         end
     end,
     Skin = function(data)
+        --store this for now
+        PlayerList[data.userId].noitaEmotes.skin = data.skin
         if ModSettingGet("noita-together.NT_SHOW_EMOTES") then
-            SkinSwapPlayerGhost(data)
+            SkinSwapPlayerGhost(data.userId, data.skin)
         end
     end
 }
@@ -170,6 +172,8 @@ wsEvents = {
             ghostEntityId = 0,
             --player cosmetic (crown,amulet,?) tracking
             cosmeticFlags = {},
+            --noitaemotes information
+            noitaEmotes = {},
             --reasonable start for health check values
             HealthCheck = { lastPosUpdate = GameGetFrameNum() }
         }
