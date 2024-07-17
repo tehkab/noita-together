@@ -59,7 +59,12 @@ local translations = ModTextFileGetContent(TRANSLATIONS_FILE) .. ModTextFileGetC
 ModTextFileSetContent(TRANSLATIONS_FILE, translations)
 
 --TODO what is all this? can we move it somewhere?
-HideGhosts = false
+HideGhosts = {
+    ["show_all"] = 0,
+    ["show_some"] = 1,
+    ["show_none"] = 2,
+    ["mode"] = 0
+}
 HideChat = false
 PlayerRadar = true
 BankItems = {}

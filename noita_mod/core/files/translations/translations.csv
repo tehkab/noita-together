@@ -35,6 +35,7 @@ noitatogether_tooltip_player_location,Location: $0,,,,,,,,,,,,tooltip for player
 noitatogether_tooltip_player_depth,Depth: $0,,,,,,,,,,,,tooltip for player depth,
 noitatogether_tooltip_player_ghost_toggle_off,No player ghosts,,,,,,,,,,,,player ghost toggle disabled,
 noitatogether_tooltip_player_ghost_toggle_on,Showing player ghosts,,,,,,,,,,,,player ghost toggle enabled,
+noitatogether_tooltip_player_ghost_toggle_some,Showing host & followed only,,,,,,,,,,,,player ghost follow-some set,
 noitatogether_tooltip_show_chat_toggle_off,Ignoring chat messages,,,,,,,,,,,,show chat toggle disabled,
 noitatogether_tooltip_show_chat_toggle_on,Showing chat messages,,,,,,,,,,,,show chat toggle enabled,
 noitatogether_tooltip_leave_a_message,Leave a message here,,,,,,,,,,,,ingame message sender button,

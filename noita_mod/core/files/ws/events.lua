@@ -178,9 +178,10 @@ wsEvents = {
             HealthCheck = { lastPosUpdate = GameGetFrameNum() }
         }
         PlayerCount = PlayerCount + 1
-        if (not HideGhosts) then
+        --TODO remove, move packets should spawn ghosts automatically
+        --[[if HideGhosts.mode == HideGhosts.show_all then
             SpawnPlayerGhost(data, data.userId)
-        end
+        end]]--
 
         --worry about perf later
         _Players = {}

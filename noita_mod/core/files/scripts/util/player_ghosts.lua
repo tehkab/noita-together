@@ -53,6 +53,16 @@ function SpawnPlayerGhost(player, userId)
     return ghost
 end
 
+function GetGhostUserId(ghost)
+    local vars = EntityGetComponent(ghost, "VariableStorageComponent")
+    for _, var in pairs(vars) do
+        local name = ComponentGetValue2(var, "name")
+        if (name == "userId") then
+            return ComponentGetValue2(var, "value_string")
+        end
+    end
+end
+
 function DespawnPlayerGhosts()
     local ghosts = EntityGetWithTag("nt_ghost")
     for _, eid in pairs(ghosts) do
@@ -68,27 +78,61 @@ end
 
 function DespawnPlayerGhost(userId)
     local ghosts = EntityGetWithTag("nt_ghost")
+
     for _, ghost in pairs(ghosts) do
-        local vars = EntityGetComponent(ghost, "VariableStorageComponent")
-        for _, var in pairs(vars) do
-            local name = ComponentGetValue2(var, "name")
-            if (name == "userId") then
-                local id = ComponentGetValue2(var, "value_string")
-                if (id == userId) then EntityKill(ghost) end
+        local id = GetGhostUserId(ghost)
+        if id == userId then EntityKill(ghost) end
+    end
+end
+
+--cull ghosts that shouldnt exist right now
+function CullPlayerGhosts()
+    local ghosts = EntityGetWithTag("nt_ghost")
+    for _, eid in pairs(ghosts) do
+        local userId = GetGhostUserId(eid)
+        if not userId or not ShouldShowGhost(userId) then
+            EntityKill(eid)
+
+            --invalidate cached entry too
+            if userId then
+                PlayerList[userId].ghostEntityId = nil
+                --nt print_error("DespawnPlayerGhosts: invalidating cached ghost for userId " .. userId)
             end
         end
     end
 end
 
 function TeleportPlayerGhost(data)
-    local ghost = GetPlayerGhost(data.userId)
-    if ghost then
-        EntitySetTransform(ghost, data.x, data.y)
+    --cull ghost if we get a teleport packet
+    DespawnPlayerGhost(data.userId)
+end
+
+function ShouldShowGhost(userId)
+    if HideGhosts.mode == HideGhosts.show_all then --all
+        --NONE: show all ghosts (subject to culling?)
+        return true
+    elseif HideGhosts.mode == HideGhosts.show_some then --"some"
+        --SOME: host and followed
+        --Hey there's no way to tell who is the host!
+        --TODO WHO IS HOST?
+        if PlayerList[userId].follow_ghost or PlayerList[userId].isHost then
+            return true
+        end
     end
+    --else: none
+
+    return false
+--    return hideMode == HIDEMODE_NONE or (Playe
 end
 
 function MovePlayerGhost(data)
     local ghost = GetPlayerGhost(data.userId)
+
+    --move packets likely means the player is nearby; spawn their ghost if it doesnt already exist
+    if not ghost and ShouldShowGhost(data.userId) then
+        ghost = SpawnPlayerGhost(PlayerList[data.userId], data.userId)
+    end
+
     if ghost then
         local dest = get_variable_storage_component(ghost, "dest")
         ComponentSetValue2(dest, "value_string", data.jank)

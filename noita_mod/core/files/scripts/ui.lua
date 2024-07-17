@@ -139,6 +139,19 @@ if not initialized then
         },
         items={}
     }
+
+    local ghostHideIcons = {
+        [0] = "players.png",
+        [1] = "some_players.png",
+        [2] = "hide_players.png",
+    }
+
+    local ghostHideTooltip = {
+        [0] = "$noitatogether_tooltip_player_ghost_toggle_on",
+        [1] = "$noitatogether_tooltip_player_ghost_toggle_some",
+        [2] = "$noitatogether_tooltip_player_ghost_toggle_off",
+    }
+
     local function reset_id()
         gui_id = 6969
     end
@@ -183,7 +196,22 @@ if not initialized then
     end
 
     local function follow_player( userId, name )
-        local ghosts = EntityGetWithTag("nt_ghost") or {}
+        --Just set/clear a bit on the PlayerList entry
+        local entry = PlayerList[userId]
+        if entry then
+            GamePrint(GameTextGet(entry.follow_ghost and "$noitatogether_stop_follow_player" or "$noitatogether_follow_player", (name or "")))
+            entry.follow_ghost = not entry.follow_ghost
+
+            --update ghosts
+            if ShouldShowGhost(userId) then
+                if not GetPlayerGhost(userId) then
+                    SpawnPlayerGhost(entry, userId)
+                end
+            else
+                DespawnPlayerGhost(userId)
+            end
+        end
+        --[[local ghosts = EntityGetWithTag("nt_ghost") or {}
         for _, ghost in ipairs(ghosts) do
             local var_comp = get_variable_storage_component(ghost, "userId")
             local user_id = ComponentGetValue2(var_comp, "value_string")
@@ -196,7 +224,7 @@ if not initialized then
                     GamePrint(GameTextGet("$noitatogether_follow_player", (name or "")))
                 end
             end
-        end
+        end]]--
     end
 
     local function wand_tooltip(wand)
@@ -893,11 +921,9 @@ if not initialized then
         if (show_bank and GamePaused) then
             show_bank = false
         end
-        local ghost_button = HideGhosts and "hide_players.png" or "players.png"
         local chat_button = HideChat and "hide_chat.png" or "chat.png"
-        local ghost_tooltip = HideGhosts and "$noitatogether_tooltip_player_ghost_toggle_off" or "$noitatogether_tooltip_player_ghost_toggle_on"
         local chat_tooltip = HideChat and "$noitatogether_tooltip_show_chat_toggle_off" or "$noitatogether_tooltip_show_chat_toggle_on"
-        
+
         if (GuiImageButton(gui, next_id(), 79, 0, "", "mods/noita-together/files/ui/buttons/keyboard.png")) then
             if (show_bank) then show_bank = false end
             show_message = not show_message
@@ -907,15 +933,17 @@ if not initialized then
         end
         GuiTooltip(gui, "$noitatogether_tooltip_leave_a_message", "")
 
-        if (GuiImageButton(gui, next_id(), 100, 0, "", "mods/noita-together/files/ui/buttons/" .. ghost_button)) then
-            HideGhosts = not HideGhosts
-            if (HideGhosts) then
+        if (GuiImageButton(gui, next_id(), 100, 0, "", "mods/noita-together/files/ui/buttons/" .. (ghostHideIcons[HideGhosts.mode] or "players.png"))) then
+            HideGhosts.mode = (HideGhosts.mode + 1) % 3
+            if HideGhosts.mode == HideGhosts.show_none then
                 DespawnPlayerGhosts()
-            else
+            elseif HideGhosts.mode == HideGhosts.show_all then
                 SpawnPlayerGhosts(PlayerList)
+            else --show_some
+                CullPlayerGhosts()
             end
         end
-        GuiTooltip(gui, ghost_tooltip, "")
+        GuiTooltip(gui, ghostHideTooltip[HideGhosts.mode], "")
 
         if (GuiImageButton(gui, next_id(), 120, 0, "", "mods/noita-together/files/ui/buttons/" .. chat_button)) then
             HideChat = not HideChat
@@ -1006,7 +1034,25 @@ if not initialized then
             GuiText(gui, 5, 215, PlayerList[selected_player].name)
         end
 
+        --TODO this needs to use cached positions now instead of ghosts
         if (PlayerRadar) then
+            for userId, entry in pairs(PlayerList) do
+                if entry.follow_ghost then
+                    local ppos_x, ppos_y = GameGetCameraPos()--GetPlayerOrCameraPos()
+                    local pos_x, pos_y = screen_width / 2, screen_height /2
+                    local dx = (entry.x or 0) - ppos_x
+                    local dy = (entry.y or 0) - ppos_y
+                    local dist = math.sqrt(dx*dx + dy*dy)
+                    if math.abs(dx) > 250 or math.abs(dy) > 150 then
+                        dx,dy = vec_normalize(dx,dy)
+                        local indicator_x = math.max(30, (pos_x - 30) + dx * 300)
+                        local indicator_y = pos_y + dy * 170
+                        GuiImage(gui, next_id(), indicator_x, indicator_y, "mods/noita-together/files/ui/player_ghost.png", 1, 1, 1)
+                        GuiTooltip(gui, (entry.name or ""), string.format("%.0fm", math.floor(dist/10)))
+                    end
+                end
+            end
+            --[[
             local ghosts = EntityGetWithTag("nt_follow") or {}
             local ppos_x, ppos_y = GetPlayerOrCameraPos()
             local pos_x, pos_y = screen_width / 2, screen_height /2
@@ -1025,6 +1071,7 @@ if not initialized then
                     GuiTooltip(gui, (PlayerList[user_id].name or ""), string.format("%.0fm", math.floor(dist/10)))
                 end
             end
+            ]]--
         end
         if (#wand_displayer > 0) then
             local wand_offset = 0
