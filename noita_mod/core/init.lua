@@ -11,7 +11,11 @@ if not async then
     dofile("mods/noita-together/files/scripts/coroutines.lua")
 end 
 dofile_once("mods/noita-together/files/scripts/utils.lua")
-dofile_once("mods/noita-together/files/scripts/ui.lua")
+if ModSettingGet("noita-together.NT_USE_BETA_DEARIMGUI") then
+    dofile_once("mods/noita-together/files/scripts/ui-dearimgui.lua")
+else
+    dofile_once("mods/noita-together/files/scripts/ui.lua")
+end
 
 -----------------
 -- lua appends --

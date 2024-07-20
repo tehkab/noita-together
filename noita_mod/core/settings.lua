@@ -46,6 +46,13 @@ mod_settings =
 		value_default = false,
 		scope=MOD_SETTING_SCOPE_RUNTIME
 	},
+    {
+        id = "NT_USE_BETA_DEARIMGUI",
+        ui_name = "(EXPERIMENTAL) Use DearImGUI UI",
+        ui_description = "Use the in-dev DearImGUI-based UI.\nRequires NoitaDearImGui to be loaded before Noita Together!",
+        value_default = false,
+        scope = MOD_SETTING_SCOPE_RUNTIME_RESTART,
+    },
 	{
 		id = "NT_SHOW_EMOTES",
 		ui_name = "Emotes system",
