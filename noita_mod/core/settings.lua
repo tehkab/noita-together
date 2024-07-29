@@ -33,6 +33,15 @@ mod_settings =
 		value_display_multiplier = 100,
 		scope=MOD_SETTING_SCOPE_RUNTIME
 	},
+    {
+        id = "NT_GHOST_RENDER_LIMIT",
+        ui_name = "Maximum player ghosts rendered",
+        ui_description = "Limit the number of players ghosts rendered. Can help performance.\nThe host and followed players will always be shown.\nSet to 0 disable (no ghost limit).",
+        value_default = 0,
+        value_min = 0,
+        value_max = 120,
+        scope=MOD_SETTING_SCOPE_RUNTIME
+    },
 	{
 		id = "NT_ENABLE_LOGGER",
 		ui_name = "Enable Logger (Debug)",
